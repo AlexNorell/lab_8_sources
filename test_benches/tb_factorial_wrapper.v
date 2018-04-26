@@ -16,7 +16,7 @@ module tb_factorial_wrapper(
     initial begin
         initialize;
         tick;
-        while (tb_fact_in <= 10) begin
+        while (tb_fact_in <= 12) begin
             data_in = tb_fact_in;
             load_start;
             address = 2'b10;
@@ -27,6 +27,13 @@ module tb_factorial_wrapper(
             tb_fact_in = tb_fact_in + 1;
             tick;
         end
+        data_in = 4'b1111;
+        load_start;
+        address = 2'b10;
+        #5;
+        while(!data_out[1]) tick; 
+        tick;
+        
         //check for error
         printResults;
         $finish;    

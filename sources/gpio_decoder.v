@@ -23,7 +23,7 @@ module gpio_decoder(
             2'b10:
                 begin
                     if (we)begin
-                        we1 = 1'b0;
+                        we1 = 1'b1;
                         we2 = 1'b0;
                         read_sel = 2'b10;
                     end
