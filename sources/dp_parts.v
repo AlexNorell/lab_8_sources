@@ -97,7 +97,7 @@ module shifter
 (input  shift_en, shift_dir, 
         [4:0]  shamt,
         [31:0] rd1_pre,
- output [31:0] rd1_pst);
+ output reg [31:0] rd1_pst);
 
 always @(*) 
 begin
