@@ -1,11 +1,11 @@
 module datapath
-(input clk, rst, pc_src, jump, reg_dst, we_reg, alu_src, dm2reg, PCtoReg, 
+(input clk, rst, pc_src, jump, reg_dst, we_reg, alu_src, dm2reg, PCtoReg, shift_en, shift_dir,
        [6:0] alu_ctrl, 
        [4:0] ra3, 
        [31:0] instr, rd_dm, 
- output zero, [31:0] pc_current, alu_out, wd_dm, rd3);
+ output zero, [31:0] pc_current, alu_out, wd_dm2, rd3);
     wire [4:0]  rf_wa, wa_final;
-    wire [31:0] pc_plus4, pc_pre, pc_post, pc_next, sext_imm, ba, 
+    wire [31:0] pc_plus4, pc_pre, pc_post, pc_next, sext_imm, ba, wd_dm,
                 bta, jta, alu_pa, alu_pb, wd_rf_1, wd_rf_2, wd_rf_final, Hi, Lo, Mult_out;
     wire [64:0] Mult_res;
     assign ba = {sext_imm[29:0], 2'b00};
@@ -28,7 +28,8 @@ module datapath
 
     signext    se         (instr[15:0], sext_imm);
     // --- ALU Logic --- //
-    mux2 #(32) alu_pb_mux (alu_src, wd_dm, sext_imm, alu_pb);
+    mux2 #(32) alu_pb_mux (alu_src, wd_dm2, sext_imm, alu_pb);
+    shifter    shift_mod  (.shift_en(shift_en), .shift_dir(shift_dir), .shamt(instr[10:6]), .rd1_pre(wd_dm), .rd1_pst(wd_dm2));
     alu        alu        (alu_ctrl[6:4], alu_pa, alu_pb, zero, alu_out);
     mult       mult       (.a(alu_pa), .b(wd_dm), .y(Mult_res));                                    //
     dreg_en    HI         (.clk(clk), .we(alu_ctrl[1]), .rst(rst), .d(Mult_res[63:32]), .q(Hi));   // NEW FOR

@@ -10,7 +10,7 @@ module tb_mips_top;
     
     initial begin
         rest;
-        while(pc_current != 32'h54) tick;
+        while(pc_current != 32'h20) tick;
         $finish;
     end
 endmodule
