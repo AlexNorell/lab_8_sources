@@ -3,10 +3,10 @@ module datapath
        [6:0] alu_ctrl, 
        [4:0] ra3, 
        [31:0] instr, rd_dm, 
- output zero, [31:0] pc_current, alu_out, wd_dm, rd3);
+ output zero, [31:0] pc_current, alu_out, wd_dm2, rd3);
     wire [4:0]  rf_wa, wa_final;
-    wire [31:0] pc_plus4, pc_pre, pc_post, pc_next, sext_imm, ba, 
-                bta, jta, alu_pa1, alu_pa2, alu_pb, wd_rf_1, wd_rf_2, wd_rf_final, Hi, Lo, Mult_out;
+    wire [31:0] pc_plus4, pc_pre, pc_post, pc_next, sext_imm, ba, wd_dm,
+                bta, jta, alu_pa, alu_pb, wd_rf_1, wd_rf_2, wd_rf_final, Hi, Lo, Mult_out;
     wire [64:0] Mult_res;
     assign ba = {sext_imm[29:0], 2'b00};
     assign jta = {pc_plus4[31:28], instr[25:0], 2'b00};
@@ -24,13 +24,13 @@ module datapath
     mux2 #(5)  rf_wa_final (.sel(PCtoReg), .a(31), .b(rf_wa), .y(wa_final));
     regfile    rf         (.clk(clk), .we(we_reg), .ra1(instr[25:21]), .ra2(instr[20:16]), 
                            .ra3(ra3), .wa(wa_final), .wd(wd_rf_final), 
-                           .rd1(alu_pa1), .rd2(wd_dm), .rd3(rd3));
+                           .rd1(alu_pa), .rd2(wd_dm), .rd3(rd3));
 
     signext    se         (instr[15:0], sext_imm);
     // --- ALU Logic --- //
-    mux2 #(32) alu_pb_mux (alu_src, wd_dm, sext_imm, alu_pb);
-    shifter    shift_mod  (.shift_en(shift_en), .shift_dir(shift_dir), .shamt(instr[10:6]), .rd1_pre(alu_pa1), .rd1_pst(alu_pa2));
-    alu        alu        (alu_ctrl[6:4], alu_pa2, alu_pb, zero, alu_out);
+    mux2 #(32) alu_pb_mux (alu_src, wd_dm2, sext_imm, alu_pb);
+    shifter    shift_mod  (.shift_en(shift_en), .shift_dir(shift_dir), .shamt(instr[10:6]), .rd1_pre(wd_dm), .rd1_pst(wd_dm2));
+    alu        alu        (alu_ctrl[6:4], alu_pa, alu_pb, zero, alu_out);
     mult       mult       (.a(alu_pa), .b(wd_dm), .y(Mult_res));                                    //
     dreg_en    HI         (.clk(clk), .we(alu_ctrl[1]), .rst(rst), .d(Mult_res[63:32]), .q(Hi));   // NEW FOR
     dreg_en    LO         (.clk(clk), .we(alu_ctrl[1]), .rst(rst), .d(Mult_res[31:0]), .q(Lo));    // MULT, MFLO, MFHI
