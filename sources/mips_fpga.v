@@ -1,9 +1,10 @@
 module mips_fpga
 (input clk, rst, button, [7:0] switches, output we_dm, sink_bit, [7:0] LEDSEL, LEDOUT);
+    
     reg  [15:0] reg_hex;
     wire        clk_sec, clk_5KHz, clk_pb;
     wire [7:0]  digit0, digit1, digit2, digit3, digit4, digit5, digit6, digit7;
-    wire [31:0] pc_current, instr, alu_out, wd_dm, rd_dm, dispData;
+    wire [31:0] pc_current, instr, alu_out, wd_dm, rd_dm, dispData, gpi1, gpi2, gpo1, gpo2;
     clk_gen     clk_gen (clk, rst, clk_sec, clk_5KHz);
     bdebouncer  bd      (clk_5KHz, button, clk_pb);
     mips        mips    (clk_pb, rst, switches[4:0], instr, rd_dm, we_dm, pc_current, alu_out, wd_dm, dispData);
@@ -12,7 +13,13 @@ module mips_fpga
 	dispData is the register contents from the RF's 3rd read port (rd3).
 	*/
     imem        imem    (pc_current[7:2], instr);
-    dmem        dmem    (clk_pb, we_dm, alu_out[7:2], wd_dm, rd_dm);
+    //dmem        dmem    (clk_pb, we_dm, alu_out[7:2], wd_dm, rd_dm);
+    interface_wrapper mem_interface(
+        .we(we_dm), .clk(clk), .reset(rst), .address(alu_out), .data_in(wd_dm),
+         .gpi1(gpi1), .gpi2(gpi2), .data_out(rd_dm), .gpo1(gpo1), .gpo2(gpo2)
+    );
+    
+    
     bcd_to_7seg bcd7    (pc_current[15:12], digit7);
     bcd_to_7seg bcd6    (pc_current[11:8], digit6);
     bcd_to_7seg bcd5    (pc_current[7:4], digit5);
