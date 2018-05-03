@@ -22,7 +22,7 @@ module mips_fpga
     
     interface_wrapper mem_interface(
         .we(we_dm), .clk(clk), .reset(rst), .address(alu_out), .data_in(wd_dm),
-         .gpi1({27'b0,switches[4:0]}), .gpi2(gpi2), .data_out(rd_dm), .gpo1(gpo1), .gpo2(gpo2)
+         .gpi1({27'b0,switches[4:0]}), .gpi2({27'b0,switches[4:0]}), .data_out(rd_dm), .gpo1(gpo1), .gpo2(gpo2)
     );
     
     bcd_to_7seg bcd7    (pc_current[15:12], digit7);
