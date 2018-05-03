@@ -22,7 +22,7 @@ module pipelined_multiplier #(parameter WIDTH=32)(
     genvar index;
     generate
         for (index = 0; index < WIDTH; index = index+1) begin:gennum
-            and_unit #(WIDTH) AND_UNIT_inst(mcandq, mplierq[index], partial_product0[(index*WIDTH+WIDTH-1):(index*WIDTH)]);
+            and_unit_piped #(WIDTH) AND_UNIT_inst(mcandq, mplierq[index], partial_product0[(index*WIDTH+WIDTH-1):(index*WIDTH)]);
         end
     endgenerate
     
@@ -62,7 +62,7 @@ module pipelined_multiplier #(parameter WIDTH=32)(
     
 endmodule
 
-module and_unit #(parameter MCAND=4)(
+module and_unit_piped #(parameter MCAND=4)(
     input wire [MCAND-1:0] multiplicand,
     input wire multiplier,
     output wire [MCAND-1:0] pproduct);
