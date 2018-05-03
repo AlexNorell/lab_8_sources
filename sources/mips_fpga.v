@@ -7,18 +7,23 @@ module mips_fpga
     wire [31:0] pc_current, instr, alu_out, wd_dm, rd_dm, dispData, gpi1, gpi2, gpo1, gpo2;
     clk_gen     clk_gen (clk, rst, clk_sec, clk_5KHz);
     bdebouncer  bd      (clk_5KHz, button, clk_pb);
-    mips        mips    (clk_pb, rst, switches[4:0], instr, rd_dm, we_dm, pc_current, alu_out, wd_dm, dispData);
+//    mips        mips    (clk_pb, rst, switches[4:0], instr, rd_dm, we_dm, pc_current, alu_out, wd_dm, dispData);
+    mips        mips    (clk_pb, rst, 5'b0, instr, rd_dm, we_dm, pc_current, alu_out, wd_dm, dispData);
 	/*
 	switchs[4:0] are used as the 3rd read address (ra3) of the RF,
 	dispData is the register contents from the RF's 3rd read port (rd3).
 	*/
     imem        imem    (pc_current[7:2], instr);
     //dmem        dmem    (clk_pb, we_dm, alu_out[7:2], wd_dm, rd_dm);
+//    interface_wrapper mem_interface(
+//        .we(we_dm), .clk(clk), .reset(rst), .address(alu_out), .data_in(wd_dm),
+//         .gpi1(gpi1), .gpi2(gpi2), .data_out(rd_dm), .gpo1(gpo1), .gpo2(gpo2)
+//    );
+    
     interface_wrapper mem_interface(
         .we(we_dm), .clk(clk), .reset(rst), .address(alu_out), .data_in(wd_dm),
-         .gpi1(gpi1), .gpi2(gpi2), .data_out(rd_dm), .gpo1(gpo1), .gpo2(gpo2)
+         .gpi1({27'b0,switches[4:0]}), .gpi2(gpi2), .data_out(rd_dm), .gpo1(gpo1), .gpo2(gpo2)
     );
-    
     
     bcd_to_7seg bcd7    (pc_current[15:12], digit7);
     bcd_to_7seg bcd6    (pc_current[11:8], digit6);
@@ -48,8 +53,9 @@ module mips_fpga
             3'b011: reg_hex = instr[31:16];             
             3'b100: reg_hex = alu_out[15:0];            
             3'b101: reg_hex = alu_out[31:16];           
-            3'b110: reg_hex = wd_dm[15:0];          
-            3'b111: reg_hex = wd_dm[31:16];
+            3'b110: reg_hex = wd_dm[15:0];   
+            3'b111: reg_hex = gpo2[15:0];       
+//            3'b111: reg_hex = wd_dm[31:16];
         endcase
     end
     assign sink_bit = (pc_current > 0) ^ (instr > 0) ^ (alu_out > 0);
