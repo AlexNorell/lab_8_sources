@@ -37,7 +37,7 @@ module datapath
     signext    se         (instr[15:0], sext_imm);
     
     // ---- Execute Register ---- //
-    wire [31:0] instrE, pc_plus4E, sext_immE, wd_dmE, alu_paE;
+    wire [31:0] instrE, pc_plus4E, sext_immE, wd_dmE, alu_paE, shift_out_wd_dmE;
     dreg #(160) EregDP (clk, rst, {instrD, pc_plus4D, sext_imm, wd_dm, alu_pa}, {instrE, pc_plus4E, sext_immE, wd_dmE, alu_paE});
     wire shift_enE, shift_dirE, mult_or_dataE, dm2regE, hi_or_loE, we_multE, we_dmE, alu_srcE;
     wire [2:0] alu_ctrlE;
@@ -47,11 +47,11 @@ module datapath
     
     // --- ALU Logic --- //
     mux2 #(32) alu_pb_mux (alu_srcE, wd_dmE, sext_immE, alu_pb);
-    shifter    shift_mod  (.shift_en(shift_enE), .shift_dir(shift_dirE), .shamt(instrE[10:6]), .rd1_pre(wd_dmE), .rd1_pst(wd_dmE));
+    shifter    shift_mod  (.shift_en(shift_enE), .shift_dir(shift_dirE), .shamt(instrE[10:6]), .rd1_pre(wd_dmE), .rd1_pst(shift_out_wd_dmE));
     alu        alu        (alu_ctrlE, alu_paE, alu_pb, zeroUnused, alu_out);
 //    mult       mult       (.a(alu_pa), .b(wd_dm), .y(Mult_res)); 
     // The multiplier already contains an input register and a mid op register. The outputs should be stored in HI-LO
-    pipelined_multiplier pipelined_multiplier_inst(.clk(clk), .reset(rst), .en(1'b1), .mcand(alu_paE), .mplier(wd_dmE), .product(Mult_res));  
+    pipelined_multiplier pipelined_multiplier_inst(.clk(clk), .reset(rst), .en(1'b1), .mcand(alu_paE), .mplier(shift_out_wd_dmE), .product(Mult_res));  
     
     
     // ---- Memory Register ---- //

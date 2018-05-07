@@ -6,8 +6,8 @@ module pipelined_multiplier #(parameter WIDTH=32)(
     input wire [WIDTH-1:0] mplier,
     output wire [2*WIDTH-1:0] product);
     
-    wire [WIDTH-1:0] mcandq, mplierq;
-    wire [2*WIDTH-1:0] productd;
+//    wire [WIDTH-1:0] mcandq, mplierq;
+//    wire [2*WIDTH-1:0] productd;
     wire [WIDTH*WIDTH-1:0] partial_product0;
     
     wire [WIDTH*32-1:0] sum16;
@@ -16,13 +16,13 @@ module pipelined_multiplier #(parameter WIDTH=32)(
     wire [WIDTH*8-1:0] sum4;
     wire [WIDTH*4-1:0] sum2;
     
-    flopenr #(WIDTH) MCAND(clk, reset, en, mcand, mcandq);
-    flopenr #(WIDTH) MPLIER(clk, reset, en, mplier, mplierq);
+//    flopenr #(WIDTH) MCAND(clk, reset, en, mcand, mcandq);
+//    flopenr #(WIDTH) MPLIER(clk, reset, en, mplier, mplierq);
     
     genvar index;
     generate
         for (index = 0; index < WIDTH; index = index+1) begin:gennum
-            and_unit_piped #(WIDTH) AND_UNIT_inst(mcandq, mplierq[index], partial_product0[(index*WIDTH+WIDTH-1):(index*WIDTH)]);
+            and_unit_piped #(WIDTH) AND_UNIT_inst(mcand, mplier[index], partial_product0[(index*WIDTH+WIDTH-1):(index*WIDTH)]);
         end
     endgenerate
     

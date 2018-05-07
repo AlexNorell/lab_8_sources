@@ -12,7 +12,7 @@ module tb_mips_top;
         rest;
         gpi1 = 5;
         gpi2 = 5;
-        while(pc_current != 32'h48) tick;
+        while(pc_current != 32'h104) tick;
         $finish;
     end
 endmodule
