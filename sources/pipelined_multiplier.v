@@ -56,9 +56,9 @@ module pipelined_multiplier #(parameter WIDTH=32)(
         end
     endgenerate
     
-    assign productd = sum2[127:64] + sum2[63:0];    
+    assign product = sum2[127:64] + sum2[63:0];    
     
-    flopenr #(2*WIDTH) OUTPUT(clk, reset, en, productd, product);
+//    flopenr #(2*WIDTH) OUTPUT(clk, reset, en, productd, product);
     
 endmodule
 
@@ -71,13 +71,13 @@ module and_unit_piped #(parameter MCAND=4)(
     
 endmodule
 
-module flopenr#(parameter WIDTH=8)(
-    input wire clk, reset, en,
-    input wire [WIDTH-1:0] d,
-    output reg [WIDTH-1:0] q);
+//module flopenr#(parameter WIDTH=8)(
+//    input wire clk, reset, en,
+//    input wire [WIDTH-1:0] d,
+//    output reg [WIDTH-1:0] q);
     
-    always @(posedge clk, posedge reset)
-        if (reset) q <= 0;
-        else if (en) q <= d;
-        else q <= q;
-endmodule
+//    always @(posedge clk, posedge reset)
+//        if (reset) q <= 0;
+//        else if (en) q <= d;
+//        else q <= q;
+//endmodule
