@@ -1,9 +1,9 @@
 module datapath
-(input clk, rst, pc_src, jump, reg_dst, we_reg, alu_src, dm2reg, PCtoReg, shift_en, shift_dir,
+(input clk, rst, pc_src, jump, reg_dst, we_reg, alu_src, dm2reg, PCtoReg, shift_en, shift_dir, we_dm,
        [6:0] alu_ctrl, 
        [4:0] ra3, 
        [31:0] instr, rd_dm, 
- output zero, [31:0] pc_current, alu_out, wd_dmM, rd3);
+ output zero, we_dmM, [31:0] pc_current, alu_out, wd_dmM, rd3, instrD);
     wire zer0Unused;
     wire [4:0]  rf_wa, wa_final;
     wire [31:0] pc_plus4, pc_pre, pc_post, pc_next, sext_imm, ba, wd_dm,
@@ -22,7 +22,7 @@ module datapath
 
     // Assume imem gets fed in here
     // ---- Decode Register ---- //
-    wire [31:0] instrD, pc_plus4D;
+    wire [31:0] pc_plus4D; // instrD is declared as an output for pass to the decoder.
     dreg #(64) Dreg (clk, rst, {instr, pc_plus4}, {instrD, pc_plus4D});
 
     // --- RF Logic --- //
@@ -38,13 +38,17 @@ module datapath
     
     // ---- Execute Register ---- //
     wire [31:0] instrE, pc_plus4E, sext_immE, wd_dmE, alu_paE;
-    dreg #(160) Ereg (clk, rst, {instrD, pc_plus4D, sext_imm, wd_dm, alu_pa}, {instrE, pc_plus4E, sext_immE, wd_dmE, alu_paE});
-    
+    dreg #(160) EregDP (clk, rst, {instrD, pc_plus4D, sext_imm, wd_dm, alu_pa}, {instrE, pc_plus4E, sext_immE, wd_dmE, alu_paE});
+    wire shift_enE, shift_dirE, mult_or_dataE, dm2regE, hi_or_loE, we_multE, we_dmE, alu_srcE;
+    wire [2:0] alu_ctrlE;
+    dreg #(11) EregCU (clk, rst, 
+                      {shift_en, shift_dir, alu_ctrl[0], dm2reg, alu_ctrl[2], alu_ctrl[1], we_dm, alu_src, alu_ctrl[6:4]}, 
+                      {shift_enE, shift_dirE, mult_or_dataE, dm2regE, hi_or_loE, we_multE, we_dmE, alu_srcE, alu_ctrlE}); 
     
     // --- ALU Logic --- //
-    mux2 #(32) alu_pb_mux (alu_src, wd_dmE, sext_immE, alu_pb);
-    shifter    shift_mod  (.shift_en(shift_en), .shift_dir(shift_dir), .shamt(instrE[10:6]), .rd1_pre(wd_dmE), .rd1_pst(wd_dmE));
-    alu        alu        (alu_ctrl[6:4], alu_paE, alu_pb, zeroUnused, alu_out);
+    mux2 #(32) alu_pb_mux (alu_srcE, wd_dmE, sext_immE, alu_pb);
+    shifter    shift_mod  (.shift_en(shift_enE), .shift_dir(shift_dirE), .shamt(instrE[10:6]), .rd1_pre(wd_dmE), .rd1_pst(wd_dmE));
+    alu        alu        (alu_ctrlE, alu_paE, alu_pb, zeroUnused, alu_out);
 //    mult       mult       (.a(alu_pa), .b(wd_dm), .y(Mult_res)); 
     // The multiplier already contains an input register and a mid op register. The outputs should be stored in HI-LO
     pipelined_multiplier  (.clk(clk), .reset(rst), .en(1'b1), .mcand(alu_paE), .mplier(wd_dmE), .product(Mult_res));  
@@ -52,18 +56,25 @@ module datapath
     
     // ---- Memory Register ---- //
     wire [31:0] alu_outM, wd_dmM; 
-    dreg #(64) Mreg (clk, rst, {alu_out, wd_dmE}, {alu_outM, wd_dmM});
-
+    dreg #(64) MregDP (clk, rst, {alu_out, wd_dmE}, {alu_outM, wd_dmM});
+    wire mult_or_dataM, dm2regM, hi_or_loM, we_multM; // we_dmM declared as output above
+    dreg #(5) MregCU (clk, rst, 
+                     {mult_or_dataE, dm2regE, hi_or_loE, we_multE, we_dmE}, 
+                     {mult_or_dataM, dm2regM, hi_or_loM, we_multM, we_dmM}); 
 
     // ---- Writeback Register ---- //
     wire [31:0] alu_outW, rd_dmW, HiW, LoW; 
-    dreg #(128) Wreg (clk, rst, {alu_outM, rd_dm, Mult_res}, {alu_outW, rd_dmW, HiW, LoW});
+    dreg #(64) WregDP (clk, rst, {alu_outM, rd_dm}, {alu_outW, rd_dmW});
+    wire mult_or_dataW, dm2regW, hi_or_loW;
+    dreg #(3) WregCU (clk, rst, 
+                     {mult_or_dataE, dm2regW, hi_or_loE}, 
+                     {mult_or_dataW, dm2regW, hi_or_loW});
     
-//    dreg_en    HI         (.clk(clk), .we(alu_ctrl[1]), .rst(rst), .d(Mult_res[63:32]), .q(Hi));   // NEW FOR
-//    dreg_en    LO         (.clk(clk), .we(alu_ctrl[1]), .rst(rst), .d(Mult_res[31:0]), .q(Lo));    // MULT, MFLO, MFHI
-    mux2 #(32) HiorLo_mux (.sel(alu_ctrl[2]), .a(HiW), .b(LoW), .y(Mult_out));  
+    dreg_en    HI         (.clk(clk), .we(we_multM), .rst(rst), .d(Mult_res[63:32]), .q(HiW));   // NEW FOR
+    dreg_en    LO         (.clk(clk), .we(we_multM), .rst(rst), .d(Mult_res[31:0]), .q(LoW));    // MULT, MFLO, MFHI 
                                //
     // --- MEM Logic --- //
-    mux2 #(32) rf_wd_mux  (dm2reg, alu_outW, rd_dmW, wd_rf_1);
-    mux2 #(32) rf_wd_mux2 (.sel(alu_ctrl[0]), .a(wd_rf_1), .b(Mult_out), .y(wd_rf_2)); // NEW for Mult functions
+    mux2 #(32) HiorLo_mux (.sel(hi_or_loW), .a(HiW), .b(LoW), .y(Mult_out)); 
+    mux2 #(32) rf_wd_mux  (dm2regW, alu_outW, rd_dmW, wd_rf_1);
+    mux2 #(32) rf_wd_mux2 (.sel(mult_or_dataW), .a(wd_rf_1), .b(Mult_out), .y(wd_rf_2)); // NEW for Mult functions
 endmodule

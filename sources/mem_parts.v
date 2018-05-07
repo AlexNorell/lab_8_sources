@@ -1,6 +1,6 @@
 module imem
-(input [5:0] a, output [31:0] y);
-    reg [31:0] rom [0:63];
+(input [7:0] a, output [31:0] y);
+    reg [31:0] rom [0:255];
     initial begin
         $readmemh ("memfile.dat", rom);
     end
