@@ -20,12 +20,12 @@ module interface_wrapper(
 
     factorial_wrapper
         factorial_inst(
-        .clk(clk), .reset(reset), .we(we1), .address(address[7:2]), .data_in(data_in[3:0]), .data_out(fact_out)
+        .clk(clk), .reset(reset), .we(we1), .address(address[3:2]), .data_in(data_in[3:0]), .data_out(fact_out)
     );
 
     gpio_wrapper
         gpio_inst(
-            .clk(clk), .reset(reset), .we(we2), .address(address[3:2]), .gpi1(gpi1), .gpi2(gpi2), .data_in(data_in),
+            .clk(clk), .reset(reset), .we(we2), .address(address[7:2]), .gpi1(gpi1), .gpi2(gpi2), .data_in(data_in),
             .data_out(gpio_out), .gpo1_out(gpo1), .gpo2_out(gpo2)
         );
 

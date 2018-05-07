@@ -51,7 +51,7 @@ module datapath
     alu        alu        (alu_ctrlE, alu_paE, alu_pb, zeroUnused, alu_out);
 //    mult       mult       (.a(alu_pa), .b(wd_dm), .y(Mult_res)); 
     // The multiplier already contains an input register and a mid op register. The outputs should be stored in HI-LO
-    pipelined_multiplier  (.clk(clk), .reset(rst), .en(1'b1), .mcand(alu_paE), .mplier(wd_dmE), .product(Mult_res));  
+    pipelined_multiplier pipelined_multiplier_inst(.clk(clk), .reset(rst), .en(1'b1), .mcand(alu_paE), .mplier(wd_dmE), .product(Mult_res));  
     
     
     // ---- Memory Register ---- //
