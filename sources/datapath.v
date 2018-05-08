@@ -22,22 +22,25 @@ module datapath
     // Assume imem gets fed in here
     // ---- Decode Register ---- //
     wire [31:0] pc_plus4D; // instrD is declared as an output for pass to the decoder.
+    wire [4:0] wa_d;
     dreg #(64) Dreg (clk, rst, {instr, pc_plus4}, {instrD, pc_plus4D});
 
     // --- RF Logic --- //
     mux2 #(5)  rf_wa_mux  (reg_dst, instrD[20:16], instrD[15:11], rf_wa);
-    mux2 #(5)  rf_wa_final (.sel(PCtoReg), .a(31), .b(rf_wa), .y(wa_final));
+    mux2 #(5)  rf_wa_final (.sel(PCtoReg), .a(31), .b(rf_wa), .y(wa_D));
+    
     regfile    rf         (.clk(clk), .we(we_reg), .ra1(instrD[25:21]), .ra2(instrD[20:16]), 
-                           .ra3(ra3), .wa(wa_final), .wd(wd_rf_final), 
+                           .ra3(ra3), .wa(wa_in), .wd(wd_rf_final), 
                            .rd1(alu_pa), .rd2(wd_dm), .rd3(rd3));
                            
     assign zero = (alu_pa == wd_dm)? 1'b1:1'b0;
     
-    signext    se         (instr[15:0], sext_imm);
+    signext    se         (instrD[15:0], sext_imm);
     
     // ---- Execute Register ---- //
     wire [31:0] instrE, pc_plus4E, sext_immE, wd_dmE, alu_paE, shift_out_wd_dmE;
-    dreg #(160) EregDP (clk, rst, {instrD, pc_plus4D, sext_imm, wd_dm, alu_pa}, {instrE, pc_plus4E, sext_immE, wd_dmE, alu_paE});
+    wire [4:0] wa_e;
+    dreg #(165) EregDP (clk, rst, {instrD, pc_plus4D, sext_imm, wd_dm, alu_pa,wa_d}, {instrE, pc_plus4E, sext_immE, wd_dmE, alu_paE, wa_e});
     wire shift_enE, shift_dirE, mult_or_dataE, dm2regE, hi_or_loE, we_multE, we_dmE, alu_srcE;
     wire [2:0] alu_ctrlE;
     dreg #(11) EregCU (clk, rst, 
@@ -55,8 +58,9 @@ module datapath
     
     
     // ---- Memory Register ---- //
-    wire [31:0] alu_outM, wd_dmM; 
-    dreg #(64) MregDP (clk, rst, {alu_out, shift_out_wd_dmE}, {alu_outM, wd_dmM});
+    wire [31:0] alu_outM, wd_dmM;
+    wire [4:0] wa_r; 
+    dreg #(69) MregDP (clk, rst, {alu_out, shift_out_wd_dm, wa_d}, {alu_outM, wd_dmM, wa_r});
     wire mult_or_dataM, dm2regM, hi_or_loM, we_multM; // we_dmM declared as output above
     dreg #(5) MregCU (clk, rst, 
                      {mult_or_dataE, dm2regE, hi_or_loE, we_multE, we_dmE}, 
