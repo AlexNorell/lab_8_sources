@@ -67,7 +67,7 @@ module datapath
     
     
     // ---- Memory Register ---- //
-    //wire [31:0] wd_dmM;
+    wire [31:0] wd_dmM;
     wire [4:0] wa_R;
     wire we_R; 
     dreg #(69) MregDP (clk, rst, {alu_out, shift_out_wd_dmE, wa_E}, {alu_outM, wd_dmM, wa_R});
@@ -81,7 +81,7 @@ module datapath
     dreg #(69) WregDP (clk, rst, {alu_outM, rd_dm, wa_R}, {alu_outW, rd_dmW, wa_WB});
     wire mult_or_dataW, dm2regW, hi_or_loW;
     dreg #(4) WregCU (clk, rst, 
-                     {mult_or_dataE, dm2regW, hi_or_loE, we_R}, 
+                     {mult_or_dataM, dm2regM, hi_or_loM, we_R}, 
                      {mult_or_dataW, dm2regW, hi_or_loW, we_WB});
     
     dreg_en    HI         (.clk(clk), .we(we_multM), .rst(rst), .d(Mult_res[63:32]), .q(HiW));   // NEW FOR
