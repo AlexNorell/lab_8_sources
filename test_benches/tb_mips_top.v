@@ -10,8 +10,8 @@ module tb_mips_top;
     
     initial begin
         rest;
-        gpi1 = 12;
-        gpi2 = 12;
+        gpi1 = 5;
+        gpi2 = 5;
         while(pc_current != 32'h1000) tick;
         $finish;
     end
