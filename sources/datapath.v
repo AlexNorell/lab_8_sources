@@ -14,7 +14,6 @@ module datapath
     // --- PC Logic --- //
     dreg       pc_reg     (clk, rst, pc_next, pc_current);
     adder      pc_plus_4  (pc_current, 4, pc_plus4);
-    adder      pc_plus_br (pc_plus4, ba, bta);
     mux2 #(32) pc_src_mux (pc_src, pc_plus4, bta, pc_pre);
     mux2 #(32) pc_jmp_mux (jump, pc_post, jta, pc_next);
     mux2 #(32) reg_to_pc  (.sel(alu_ctrl[3]), .a(pc_pre), .b(alu_pa), .y(pc_post)); //NEW for JR command
@@ -46,7 +45,8 @@ module datapath
                       {shift_enE, shift_dirE, mult_or_dataE, dm2regE, hi_or_loE, we_multE, we_dmE, alu_srcE, alu_ctrlE}); 
     
     // --- ALU Logic --- //
-    mux2 #(32) alu_pb_mux (alu_srcE, wd_dmE, sext_immE, alu_pb);
+    adder      pc_plus_br (pc_plus4E, ba, bta);
+    mux2 #(32) alu_pb_mux (alu_srcE, shift_out_wd_dmE, sext_immE, alu_pb);
     shifter    shift_mod  (.shift_en(shift_enE), .shift_dir(shift_dirE), .shamt(instrE[10:6]), .rd1_pre(wd_dmE), .rd1_pst(shift_out_wd_dmE));
     alu        alu        (alu_ctrlE, alu_paE, alu_pb, zeroUnused, alu_out);
 //    mult       mult       (.a(alu_pa), .b(wd_dm), .y(Mult_res)); 
@@ -56,7 +56,7 @@ module datapath
     
     // ---- Memory Register ---- //
     wire [31:0] alu_outM, wd_dmM; 
-    dreg #(64) MregDP (clk, rst, {alu_out, wd_dmE}, {alu_outM, wd_dmM});
+    dreg #(64) MregDP (clk, rst, {alu_out, shift_out_wd_dmE}, {alu_outM, wd_dmM});
     wire mult_or_dataM, dm2regM, hi_or_loM, we_multM; // we_dmM declared as output above
     dreg #(5) MregCU (clk, rst, 
                      {mult_or_dataE, dm2regE, hi_or_loE, we_multE, we_dmE}, 
