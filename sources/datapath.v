@@ -12,9 +12,10 @@ module datapath
 
     wire [4:0] wa_WB;
     wire we_WB, PCtoRegW; 
+    wire [31:0] pc_plus4D; // instrD is declared as an output for pass to the decoder.
 
     assign ba = {sext_imm[29:0], 2'b00};
-    assign jta = {pc_plus4[31:28], instr[25:0], 2'b00};
+    assign jta = {pc_plus4D[31:28], instrD[25:0], 2'b00};
     // --- PC Logic --- //
     dreg       pc_reg     (clk, rst, pc_next, pc_current);
     adder      pc_plus_4  (pc_current, 4, pc_plus4);
@@ -25,7 +26,7 @@ module datapath
 
     // Assume imem gets fed in here
     // ---- Decode Register ---- //
-    wire [31:0] pc_plus4D; // instrD is declared as an output for pass to the decoder.
+
     wire [4:0] wa_D;
     wire we_D;
     assign we_D = we_reg;
@@ -48,16 +49,16 @@ module datapath
     wire [31:0] instrE, pc_plus4E, sext_immE, wd_dmE, alu_paE, shift_out_wd_dmE;
     wire [4:0] wa_E;
     wire we_E;
-    dreg #(165) EregDP (clk, rst, {instrD, pc_plus4D, sext_imm, wd_dm, alu_pa,wa_D}, {instrE, pc_plus4E, sext_immE, wd_dmE, alu_paE, wa_E});
+    dreg #(165) EregDP (clk, rst, {instrD, pc_plus4D, ba, wd_dm, alu_pa,wa_D}, {instrE, pc_plus4E, sext_immE, wd_dmE, alu_paE, wa_E});
     wire shift_enE, shift_dirE, mult_or_dataE, dm2regE, hi_or_loE, we_multE, we_dmE, alu_srcE, PCtoRegE;
     wire [2:0] alu_ctrlE;
-    dreg #(12) EregCU (clk, rst, 
+    dreg #(13) EregCU (clk, rst, 
                       {shift_en, shift_dir, alu_ctrl[0], dm2reg, alu_ctrl[2], alu_ctrl[1], we_dm, alu_src, alu_ctrl[6:4], we_D, PCtoReg}, 
                       {shift_enE, shift_dirE, mult_or_dataE, dm2regE, hi_or_loE, we_multE, we_dmE, alu_srcE, alu_ctrlE, we_E, PCtoRegE}); 
     
     // --- ALU Logic --- //
     wire [31:0] alu_out;
-    adder      pc_plus_br (pc_plus4E, ba, bta);
+    adder      pc_plus_br (pc_plus4D, ba, bta);
     mux2 #(32) alu_pb_mux (alu_srcE, shift_out_wd_dmE, sext_immE, alu_pb);
     shifter    shift_mod  (.shift_en(shift_enE), .shift_dir(shift_dirE), .shamt(instrE[10:6]), .rd1_pre(wd_dmE), .rd1_pst(shift_out_wd_dmE));
     alu        alu        (alu_ctrlE, alu_paE, alu_pb, zeroUnused, alu_out);
@@ -72,7 +73,7 @@ module datapath
     wire we_R; 
     dreg #(69) MregDP (clk, rst, {alu_out, shift_out_wd_dmE, wa_E}, {alu_outM, wd_dmM, wa_R});
     wire mult_or_dataM, dm2regM, hi_or_loM, we_multM, PCtoRegM; // we_dmM declared as output above
-    dreg #(6) MregCU (clk, rst, 
+    dreg #(7) MregCU (clk, rst, 
                      {mult_or_dataE, dm2regE, hi_or_loE, we_multE, we_dmE, we_E, PCtoRegE}, 
                      {mult_or_dataM, dm2regM, hi_or_loM, we_multM, we_dmM, we_R, PCtoRegM}); 
 
@@ -80,7 +81,7 @@ module datapath
     wire [31:0] alu_outW, rd_dmW, HiW, LoW;
     dreg #(69) WregDP (clk, rst, {alu_outM, rd_dm, wa_R}, {alu_outW, rd_dmW, wa_WB});
     wire mult_or_dataW, dm2regW, hi_or_loW;// PCtoRegW  declared up top
-    dreg #(4) WregCU (clk, rst, 
+    dreg #(5) WregCU (clk, rst, 
                      {mult_or_dataM, dm2regM, hi_or_loM, we_R,PCtoRegM}, 
                      {mult_or_dataW, dm2regW, hi_or_loW, we_WB,PCtoRegW});
     
